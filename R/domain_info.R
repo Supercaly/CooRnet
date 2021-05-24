@@ -10,11 +10,12 @@
 #' @examples
 #'  info <- domains_info(
 #'    domains = "domain1.com, domain2.com, domain3.com",
-#'    excludes="domain2.com)
+#'    excludes="domain2.com")
 #'
 #' @export
 #'
-domains_info <- function(domains, excludes="google.com, facebook.com, youtube.com") {
+#' TODO: Rename parameter payed to history
+domains_info <- function(domains, excludes="google.com, facebook.com, youtube.com", payed=FALSE) {
   # Check input parameters
   if (missing(domains)) {
     stop("The function requires the parameter 'domains'!")
@@ -75,8 +76,15 @@ domains_info <- function(domains, excludes="google.com, facebook.com, youtube.co
     )
   )
 
-  for (name in domains) {
-    domain_df <- rbind(domain_df, get_single_domain_info(name))
+  # If payed is FALSE use Rwhois package otherwise use
+  # the payed remote APIs
+  if (!payed) {
+    domain_df <- get_free_bulk_domain_info(domains)
+  } else {
+    # TODO: Replace this loop with a more efficent function
+    for (name in domains) {
+      domain_df <- rbind(domain_df, get_single_domain_info(name))
+    }
   }
 
   return(domain_df)
@@ -97,6 +105,7 @@ get_single_domain_info <- function(name) {
   cat(paste0("Getting info about domain ", name, "...\n"))
 
   # Get the json data from whois API
+  # TODO: Use real API calls
   json_response <- get_dummy_json_data()
   json_response <- json_response[["records"]]
 
@@ -144,6 +153,81 @@ get_single_domain_info <- function(name) {
 
   return(result)
 
+}
+
+#' get_free_bulk_domain_info
+#'
+#' A function that returns all the info about a list of domain
+#' using the Rwhois package
+#'
+#' @param domain_names a list of domain names to search
+#'
+#' @return A data.frame with info about the given domain names
+#'
+#' @examples
+#'   info <- get_free_bulk_domain_info("domain1.com")
+#' @export
+get_free_bulk_domain_info <- function(domain_names) {
+  # Check parameters
+  if (!is.character(domain_names)) {
+    stop("'domain_names' is not a character list!")
+  }
+  # If domain_names is empty exit this function
+  if (length(domain_names) == 0 || domain_names == "") {
+    cat("No domains to search...\n")
+    return(NULL)
+  }
+
+  cat(paste0("Getting info about domains ", paste(domain_names, collapse = ", "), "...\n"))
+
+  data <- Rwhois::whois_query(domain_names)
+
+  if (length(domain_names) == 1) {
+    dName <- NA
+    dStatus <- NA
+    dExpireDate <- NA
+    dCreatedDate <- NA
+    dUpdatedDate <- NA
+    createdDateSet <- FALSE
+    updatedDateSet <- FALSE
+
+    # Search only one domain
+    for (i in 1:nrow(data)) {
+      key <- data[i, 1]
+      value <- data[i, 2]
+
+      # Skip all headers
+      if (startsWith(key, "*")) {
+        next
+      }
+
+      if (key == "Domain") {
+        dName <- value
+      } else if (key == "Status") {
+        dStatus <- value
+      } else if (key == "Expire Date") {
+        dExpireDate <- value
+      } else if (key == "Created" && !createdDateSet) {
+        dCreatedDate <- value
+        createdDateSet <- TRUE
+      } else if (key == "Last Update" && !updatedDateSet) {
+        dUpdatedDate <- value
+        updatedDateSet <- TRUE
+      }
+
+
+      #print(paste0(key, " - ", value))
+    }
+
+    print(dName)
+    print(dStatus)
+    print(dExpireDate)
+    print(dCreatedDate)
+    print(dUpdatedDate)
+  } else {
+    # Search multiple domains
+    stop("TODO: Multidomains not supported yet!!!")
+  }
 }
 
 get_dummy_json_data <- function() {

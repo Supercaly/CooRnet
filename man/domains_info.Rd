@@ -4,10 +4,16 @@
 \alias{domains_info}
 \title{domains_info}
 \usage{
-domains_info(domains)
+domains_info(
+  domains,
+  excludes = "google.com, facebook.com, youtube.com",
+  payed = FALSE
+)
 }
 \arguments{
-\item{domains}{A vector of domain names}
+\item{domains}{A comma separated string of domain names}
+
+\item{excludes}{A comma separated string of domain names to esclude from search}
 }
 \value{
 A data.frame with info about the given domains
@@ -16,6 +22,8 @@ A data.frame with info about the given domains
 A function that returns Whois data about a given list domain names
 }
 \examples{
- info <- domains_info(domains = c("google.com"))
+ info <- domains_info(
+   domains = "domain1.com, domain2.com, domain3.com",
+   excludes="domain2.com")
 
 }
