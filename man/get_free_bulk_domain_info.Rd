@@ -18,4 +18,5 @@ using the Rwhois package
 }
 \examples{
   info <- get_free_bulk_domain_info("domain1.com")
+
 }

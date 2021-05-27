@@ -34,47 +34,7 @@ domains_info <- function(domains, excludes="google.com, facebook.com, youtube.co
   domains <- setdiff(domains, excludes)
 
   # Create empty result data frame
-  domain_df <- data.frame(
-    domain_name=character(),
-    type=character(),
-    created_date=character(),
-    updated_date=character(),
-    expire_date=character(),
-    status=character(),
-    registrat_contact=data.frame(
-      name=character(),
-      organization=character(),
-      country=character(),
-      state=character(),
-      city=character(),
-      street=character(),
-      postal_code=character(),
-      email=character(),
-      telephone=character()
-    ),
-    administrative_contact=data.frame(
-      name=character(),
-      organization=character(),
-      country=character(),
-      state=character(),
-      city=character(),
-      street=character(),
-      postal_code=character(),
-      email=character(),
-      telephone=character()
-    ),
-    technical_contact=data.frame(
-      name=character(),
-      organization=character(),
-      country=character(),
-      state=character(),
-      city=character(),
-      street=character(),
-      postal_code=character(),
-      email=character(),
-      telephone=character()
-    )
-  )
+  domain_df <- get_empty_result_data()
 
   # If payed is FALSE use Rwhois package otherwise use
   # the payed remote APIs
@@ -149,7 +109,8 @@ get_single_domain_info <- function(name) {
       postal_code=toString(json_response$technicalContact.postalCode),
       email=toString(json_response$technicalContact.email),
       telephone=toString(json_response$technicalContact.telephone)
-    ))
+    ),
+    raw_data=NA)
 
   return(result)
 
@@ -166,7 +127,7 @@ get_single_domain_info <- function(name) {
 #'
 #' @examples
 #'   info <- get_free_bulk_domain_info("domain1.com")
-#' @export
+#'
 get_free_bulk_domain_info <- function(domain_names) {
   # Check parameters
   if (!is.character(domain_names)) {
@@ -178,56 +139,141 @@ get_free_bulk_domain_info <- function(domain_names) {
     return(NULL)
   }
 
+  result <- get_empty_result_data()
+
   cat(paste0("Getting info about domains ", paste(domain_names, collapse = ", "), "...\n"))
 
-  data <- Rwhois::whois_query(domain_names)
-
-  if (length(domain_names) == 1) {
-    dName <- NA
-    dStatus <- NA
-    dExpireDate <- NA
-    dCreatedDate <- NA
-    dUpdatedDate <- NA
-    createdDateSet <- FALSE
-    updatedDateSet <- FALSE
-
-    # Search only one domain
-    for (i in 1:nrow(data)) {
-      key <- data[i, 1]
-      value <- data[i, 2]
-
-      # Skip all headers
-      if (startsWith(key, "*")) {
-        next
-      }
-
-      if (key == "Domain") {
-        dName <- value
-      } else if (key == "Status") {
-        dStatus <- value
-      } else if (key == "Expire Date") {
-        dExpireDate <- value
-      } else if (key == "Created" && !createdDateSet) {
-        dCreatedDate <- value
-        createdDateSet <- TRUE
-      } else if (key == "Last Update" && !updatedDateSet) {
-        dUpdatedDate <- value
-        updatedDateSet <- TRUE
-      }
-
-
-      #print(paste0(key, " - ", value))
+  for (host in domain_names) {
+    # Get recursively the info about the domain
+    refer = "whois.iana.org"
+    while(length(refer) != 0) {
+      raw_data <- get_raw_domain_info(hostname = host, server = refer)
+      raw_data <- strsplit(raw_data, "\n")[[1]]
+      refer <- gsub("refer:\\s*", "", raw_data[grep("^refer:", raw_data)])
     }
-
-    print(dName)
-    print(dStatus)
-    print(dExpireDate)
-    print(dCreatedDate)
-    print(dUpdatedDate)
-  } else {
-    # Search multiple domains
-    stop("TODO: Multidomains not supported yet!!!")
+    raw_data <- paste(raw_data, collapse = "\n")
+    result <- rbind(result, data.frame(
+      domain_name=NA,
+      type=NA,
+      created_date=NA,
+      updated_date=NA,
+      expire_date=NA,
+      status=NA,
+      registrat_contact=data.frame(
+        name=NA,
+        organization=NA,
+        country=NA,
+        state=NA,
+        city=NA,
+        street=NA,
+        postal_code=NA,
+        email=NA,
+        telephone=NA
+      ),
+      administrative_contact=data.frame(
+        name=NA,
+        organization=NA,
+        country=NA,
+        state=NA,
+        city=NA,
+        street=NA,
+        postal_code=NA,
+        email=NA,
+        telephone=NA
+      ),
+      technical_contact=data.frame(
+        name=NA,
+        organization=NA,
+        country=NA,
+        state=NA,
+        city=NA,
+        street=NA,
+        postal_code=NA,
+        email=NA,
+        telephone=NA
+      ),
+      raw_data=raw_data)
+      )
   }
+  return(result)
+}
+
+#' get_raw_domain_info
+#'
+#' A function that returns info about a domain in a row format
+#'
+#' @param hostname the domain name to search
+#' @param server the server address to use for the search
+#'
+#' @return A string with the raw domain info
+#'
+get_raw_domain_info <- function(hostname, server) {
+  # Get data from server
+  conn <- make.socket(server, 43)
+  write.socket(conn, hostname)
+  write.socket(conn, "\r\n")
+
+  data <- ""
+  curr_read <- "x"
+
+  while(curr_read != "") {
+    curr_read <- read.socket(conn)
+    data <- paste0(data, curr_read)
+  }
+
+  close.socket(conn)
+  return(data)
+}
+
+#' get_empty_result_data
+#'
+#' A function that returns a empty return data.frame
+#'
+#' @return A data.frame
+#'
+get_empty_result_data <- function() {
+  return(data.frame(
+    domain_name=character(),
+    type=character(),
+    created_date=character(),
+    updated_date=character(),
+    expire_date=character(),
+    status=character(),
+    registrat_contact=data.frame(
+      name=character(),
+      organization=character(),
+      country=character(),
+      state=character(),
+      city=character(),
+      street=character(),
+      postal_code=character(),
+      email=character(),
+      telephone=character()
+    ),
+    administrative_contact=data.frame(
+      name=character(),
+      organization=character(),
+      country=character(),
+      state=character(),
+      city=character(),
+      street=character(),
+      postal_code=character(),
+      email=character(),
+      telephone=character()
+    ),
+    technical_contact=data.frame(
+      name=character(),
+      organization=character(),
+      country=character(),
+      state=character(),
+      city=character(),
+      street=character(),
+      postal_code=character(),
+      email=character(),
+      telephone=character()
+    ),
+    raw_data=character()
+  ))
 }
 
 get_dummy_json_data <- function() {
