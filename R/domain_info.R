@@ -155,7 +155,10 @@ get_free_bulk_domain_info <- function(domain_names) {
       }
       raw_data <- strsplit(raw_data, "\n")[[1]]
       refer <- gsub("refer:\\s*", "", raw_data[grep("^refer:", raw_data)])
-      # TODO: Remove all lines with * and %
+
+      # Strip all lines starting with % and *
+      raw_data <- raw_data[!substr(raw_data, 1, 1) %in% c("*", "%")]
+
       raw_data <- paste(raw_data, collapse = "\n")
     }
 
@@ -212,7 +215,8 @@ get_free_bulk_domain_info <- function(domain_names) {
 #' @param hostname the domain name to search
 #' @param server the server address to use for the search
 #'
-#' @return A string with the raw domain info
+#' @return A string with the raw domain info or NA if
+#'         there was an error
 #'
 get_raw_domain_info <- function(hostname, server) {
   # Get data from server
