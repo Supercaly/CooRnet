@@ -150,6 +150,7 @@ get_free_bulk_domain_info <- function(domain_names) {
       raw_data <- get_raw_domain_info(hostname = host, server = refer)
       raw_data <- strsplit(raw_data, "\n")[[1]]
       refer <- gsub("refer:\\s*", "", raw_data[grep("^refer:", raw_data)])
+      # TODO: Remove all lines with * and %
     }
     raw_data <- paste(raw_data, collapse = "\n")
     result <- rbind(result, data.frame(
@@ -222,6 +223,9 @@ get_raw_domain_info <- function(hostname, server) {
   }
 
   close.socket(conn)
+
+  # TODO: Check that the data is not an error
+  # When there is an error the query returns a string that contains this text: "This query returned 0 objects."; use pattern-matching to return NULL instead.
   return(data)
 }
 
