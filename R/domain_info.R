@@ -144,15 +144,21 @@ get_free_bulk_domain_info <- function(domain_names) {
   cat(paste0("Getting info about domains ", paste(domain_names, collapse = ", "), "...\n"))
 
   for (host in domain_names) {
+    raw_data <- NA
     # Get recursively the info about the domain
     refer = "whois.iana.org"
     while(length(refer) != 0) {
       raw_data <- get_raw_domain_info(hostname = host, server = refer)
+      # If the raw domain is NA exit the loop
+      if (is.na(raw_data)) {
+        break
+      }
       raw_data <- strsplit(raw_data, "\n")[[1]]
       refer <- gsub("refer:\\s*", "", raw_data[grep("^refer:", raw_data)])
       # TODO: Remove all lines with * and %
+      raw_data <- paste(raw_data, collapse = "\n")
     }
-    raw_data <- paste(raw_data, collapse = "\n")
+
     result <- rbind(result, data.frame(
       domain_name=NA,
       type=NA,
@@ -224,8 +230,11 @@ get_raw_domain_info <- function(hostname, server) {
 
   close.socket(conn)
 
-  # TODO: Check that the data is not an error
-  # When there is an error the query returns a string that contains this text: "This query returned 0 objects."; use pattern-matching to return NULL instead.
+  # If there was an error return NA instead of the default error message
+  if (length(grep("This query returned 0 objects", data, value = TRUE)) != 0) {
+    return(NA)
+  }
+
   return(data)
 }
 
