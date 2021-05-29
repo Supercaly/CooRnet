@@ -12,7 +12,8 @@ get_raw_domain_info(hostname, server)
 \item{server}{the server address to use for the search}
 }
 \value{
-A string with the raw domain info
+A string with the raw domain info or NA if
+        there was an error
 }
 \description{
 A function that returns info about a domain in a row format
