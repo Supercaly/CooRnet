@@ -3,19 +3,20 @@
 #' A function that returns Whois data about a given list domain names
 #'
 #' @param domains A comma separated string of domain names
-#' @param excludes A comma separated string of domain names to esclude from search
+#' @param excludes A comma separated string of domain names to exclude from search
+#' @param history If true uses the payed Whois API, if false uses the raw data
 #'
 #' @return A data.frame with info about the given domains
 #'
 #' @examples
 #'  info <- domains_info(
 #'    domains = "domain1.com, domain2.com, domain3.com",
-#'    excludes="domain2.com")
+#'    excludes="domain2.com",
+#'    history=TRUE)
 #'
 #' @export
 #'
-#' TODO: Rename parameter payed to history
-domains_info <- function(domains, excludes="google.com, facebook.com, youtube.com", payed=FALSE) {
+domains_info <- function(domains, excludes="google.com, facebook.com, youtube.com", history=FALSE) {
   # Check input parameters
   if (missing(domains)) {
     stop("The function requires the parameter 'domains'!")
@@ -36,12 +37,12 @@ domains_info <- function(domains, excludes="google.com, facebook.com, youtube.co
   # Create empty result data frame
   domain_df <- get_empty_result_data()
 
-  # If payed is FALSE use Rwhois package otherwise use
-  # the payed remote APIs
-  if (!payed) {
-    domain_df <- get_free_bulk_domain_info(domains)
+  # If history is FALSE get the raw data otherwise use
+  # the history remote APIs
+  if (!history) {
+    domain_df <- get_bulk_raw_domain_info(domains)
   } else {
-    # TODO: Replace this loop with a more efficent function
+    # TODO: Replace this loop with a more efficient function
     for (name in domains) {
       domain_df <- rbind(domain_df, get_single_domain_info(name))
     }
@@ -116,33 +117,36 @@ get_single_domain_info <- function(name) {
 
 }
 
-#' get_free_bulk_domain_info
+#' get_bulk_raw_domain_info
 #'
-#' A function that returns all the info about a list of domain
-#' using the Rwhois package
+#' A function that returns raw the info about a list of domain
+#' using direct calls to Whois servers
 #'
 #' @param domain_names a list of domain names to search
 #'
 #' @return A data.frame with info about the given domain names
+#'         Note: all fields of the data.frame are set to NA except
+#'         for raw_data
 #'
 #' @examples
-#'   info <- get_free_bulk_domain_info("domain1.com")
+#'   info <- get_bulk_raw_domain_info("domain1.com, domain2.com")
 #'
-get_free_bulk_domain_info <- function(domain_names) {
+get_bulk_raw_domain_info <- function(domain_names) {
   # Check parameters
   if (!is.character(domain_names)) {
     stop("'domain_names' is not a character list!")
   }
-  # If domain_names is empty exit this function
+  # If domain_names is empty exit this function returning
+  # an empty data.frame
   if (length(domain_names) == 0 || domain_names == "") {
     cat("No domains to search...\n")
-    return(NULL)
+    return(get_empty_result_data())
   }
-
-  result <- get_empty_result_data()
 
   cat(paste0("Getting info about domains ", paste(domain_names, collapse = ", "), "...\n"))
 
+  # Get info about each domain name
+  result <- get_empty_result_data()
   for (host in domain_names) {
     raw_data <- NA
     # Get recursively the info about the domain

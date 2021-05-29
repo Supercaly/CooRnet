@@ -7,13 +7,15 @@
 domains_info(
   domains,
   excludes = "google.com, facebook.com, youtube.com",
-  payed = FALSE
+  history = FALSE
 )
 }
 \arguments{
 \item{domains}{A comma separated string of domain names}
 
-\item{excludes}{A comma separated string of domain names to esclude from search}
+\item{excludes}{A comma separated string of domain names to exclude from search}
+
+\item{history}{If true uses the payed Whois API, if false uses the raw data}
 }
 \value{
 A data.frame with info about the given domains
@@ -24,6 +26,7 @@ A function that returns Whois data about a given list domain names
 \examples{
  info <- domains_info(
    domains = "domain1.com, domain2.com, domain3.com",
-   excludes="domain2.com")
+   excludes="domain2.com",
+   history=TRUE)
 
 }
