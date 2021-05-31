@@ -21,7 +21,7 @@ domains_info(
 A data.frame with info about the given domains
 }
 \description{
-A function that returns Whois data about a given list domain names
+A function that returns Whois data about a given list of domain names
 }
 \examples{
  info <- domains_info(

@@ -19,6 +19,6 @@ A function that returns raw the info about a list of domain
 using direct calls to Whois servers
 }
 \examples{
-  info <- get_free_bulk_domain_info("domain1.com")
+  info <- get_bulk_raw_domain_info("domain1.com, domain2.com")
 
 }

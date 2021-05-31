@@ -1,6 +1,6 @@
 #' domains_info
 #'
-#' A function that returns Whois data about a given list domain names
+#' A function that returns Whois data about a given list of domain names
 #'
 #' @param domains A comma separated string of domain names
 #' @param excludes A comma separated string of domain names to exclude from search
@@ -31,21 +31,18 @@ domains_info <- function(domains, excludes="google.com, facebook.com, youtube.co
   # Split domains and excludes in lists
   domains <- unique(strsplit(domains, "\\s*,\\s*")[[1]])
   excludes <- unique(strsplit(excludes, "\\s*,\\s*")[[1]])
-  # Remove all excluded elements form domains
+  # Remove all excluded elements form domains and all empty strings
   domains <- setdiff(domains, excludes)
-
-  # Create empty result data frame
-  domain_df <- get_empty_result_data()
+  domains <- domains[domains != ""]
 
   # If history is FALSE get the raw data otherwise use
   # the history remote APIs
   if (!history) {
     domain_df <- get_bulk_raw_domain_info(domains)
   } else {
-    # TODO: Replace this loop with a more efficient function
-    for (name in domains) {
-      domain_df <- rbind(domain_df, get_single_domain_info(name))
-    }
+    domain_df <- names_to_df(domains, FUN = function(name) {
+      get_single_domain_info(name)
+    })
   }
 
   return(domain_df)
@@ -146,8 +143,7 @@ get_bulk_raw_domain_info <- function(domain_names) {
   cat(paste0("Getting info about domains ", paste(domain_names, collapse = ", "), "...\n"))
 
   # Get info about each domain name
-  result <- get_empty_result_data()
-  for (host in domain_names) {
+  result <- names_to_df(domain_names, FUN = function(host) {
     raw_data <- NA
     # Get recursively the info about the domain
     refer = "whois.iana.org"
@@ -166,7 +162,7 @@ get_bulk_raw_domain_info <- function(domain_names) {
       raw_data <- paste(raw_data, collapse = "\n")
     }
 
-    result <- rbind(result, data.frame(
+    data.frame(
       domain_name=NA,
       type=NA,
       created_date=NA,
@@ -207,8 +203,7 @@ get_bulk_raw_domain_info <- function(domain_names) {
         telephone=NA
       ),
       raw_data=raw_data)
-      )
-  }
+  })
   return(result)
 }
 
@@ -295,6 +290,31 @@ get_empty_result_data <- function() {
     ),
     raw_data=character()
   ))
+}
+
+
+#' names_to_df
+#'
+#' A function that takes a vector of domain names and apply
+#' a given FUN to each of them returning a data.frame
+#'
+#' @param x A vector of domain names
+#' @param FUN A function applied to each domain name
+#'            Note: the function must return a data.frame
+#'
+#' @return A data.frame
+#'
+names_to_df <- function(x, FUN) {
+  #if (length(x) == 0 || is.na(x)) {
+  #  return(get_empty_result_data())
+  #}
+  #res <- as.data.frame(t(sapply(x, FUN = FUN)))
+  #row.names(res) <- 1:nrow(res)
+  res <- get_empty_result_data()
+  for (name in x) {
+    res <- rbind(res, FUN(name))
+  }
+  return(res)
 }
 
 get_dummy_json_data <- function() {
