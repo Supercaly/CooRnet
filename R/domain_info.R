@@ -14,6 +14,9 @@
 #'    excludes="domain2.com",
 #'    history=TRUE)
 #'
+#'  info2 <- domains_info(
+#'    domains = "domain1.com, domain2.com, domain3.com",
+#'    excludes="domain2.com")
 #' @export
 #'
 domains_info <- function(domains, excludes="google.com, facebook.com, youtube.com", history=FALSE) {
@@ -63,12 +66,13 @@ get_single_domain_info <- function(name) {
   cat(paste0("Getting info about domain ", name, "...\n"))
 
   # Get the json data from whois API
-  # TODO: Use real API calls
-  json_response <- get_dummy_json_data()
-  json_response <- json_response[["records"]]
+  json_response <- get_domain_info_from_api(name)
+  if (is.null(json_response)) {
+    return(get_na_result_data())
+  }
 
   # Create the result data.frame with all the data
-  result <-data.frame(
+  return(data.frame(
     domain_name=toString(json_response$domainName),
     type=toString(json_response$domainType),
     created_date=toString(json_response$createdDateISO8601),
@@ -108,15 +112,12 @@ get_single_domain_info <- function(name) {
       email=toString(json_response$technicalContact.email),
       telephone=toString(json_response$technicalContact.telephone)
     ),
-    raw_data=NA)
-
-  return(result)
-
+    raw_data=NA))
 }
 
 #' get_bulk_raw_domain_info
 #'
-#' A function that returns raw the info about a list of domain
+#' A function that returns raw info about a list of domain
 #' using direct calls to Whois servers
 #'
 #' @param domain_names a list of domain names to search
@@ -241,6 +242,47 @@ get_raw_domain_info <- function(hostname, server) {
   return(data)
 }
 
+#' get_domain_info_from_api
+#'
+#' A function that returns the domain info obtained
+#' from the Whois API
+#'
+#' @param hostname the domain name to search
+#'
+#' @return a data.frame with the response content or NULL
+#'         if the server responded with a status that's
+#'         not 200
+#' @importFrom httr POST status_code content
+#'
+get_domain_info_from_api <- function(hostname) {
+  res <- httr::POST(
+    "http://localhost:5000/api/v1",
+    body = list(
+      apiKey=Sys.getenv("WHOIS_API_KEY"),
+      domainName=hostname,
+      mode="preview"
+    ),
+    encode = "json")
+
+  res_status <- httr::status_code(res)
+
+  # Check status code for errors
+  if (res_status == 401) {
+    stop(paste0(
+      "Error retrieving domain info from Whois server: ",
+      "The provided API Key is not valid, ",
+      "check that the value of WHOIS_API_KEY in .Renviron is correct."))
+  }
+  if (res_status != 200) {
+    cat(paste0("Error retrieving domain info from Whois server! status: '", res_status,"'"))
+    return(NULL)
+  }
+
+  content <- httr::content(res, as="text", encoding = "UTF-8")
+  json_content <- fromJSON(content, flatten = TRUE)[["records"]]
+  return(json_content)
+}
+
 #' get_empty_result_data
 #'
 #' A function that returns a empty return data.frame
@@ -292,6 +334,56 @@ get_empty_result_data <- function() {
   ))
 }
 
+#' get_na_result_data
+#'
+#' A function that returns a return data.frame with all NA values
+#'
+#' @return A data.frame
+#'
+get_na_result_data <- function() {
+  return(data.frame(
+    domain_name=NA,
+    type=NA,
+    created_date=NA,
+    updated_date=NA,
+    expire_date=NA,
+    status=NA,
+    registrat_contact=data.frame(
+      name=NA,
+      organization=NA,
+      country=NA,
+      state=NA,
+      city=NA,
+      street=NA,
+      postal_code=NA,
+      email=NA,
+      telephone=NA
+    ),
+    administrative_contact=data.frame(
+      name=NA,
+      organization=NA,
+      country=NA,
+      state=NA,
+      city=NA,
+      street=NA,
+      postal_code=NA,
+      email=NA,
+      telephone=NA
+    ),
+    technical_contact=data.frame(
+      name=NA,
+      organization=NA,
+      country=NA,
+      state=NA,
+      city=NA,
+      street=NA,
+      postal_code=NA,
+      email=NA,
+      telephone=NA
+    ),
+    raw_data=NA
+  ))
+}
 
 #' names_to_df
 #'
@@ -305,6 +397,7 @@ get_empty_result_data <- function() {
 #' @return A data.frame
 #'
 names_to_df <- function(x, FUN) {
+  # TODO: Make this code faster
   #if (length(x) == 0 || is.na(x)) {
   #  return(get_empty_result_data())
   #}
@@ -315,8 +408,4 @@ names_to_df <- function(x, FUN) {
     res <- rbind(res, FUN(name))
   }
   return(res)
-}
-
-get_dummy_json_data <- function() {
-  data <- fromJSON("fatto_domain_response.json", flatten = TRUE)
 }

@@ -15,7 +15,7 @@ A data.frame with info about the given domain names
         for raw_data
 }
 \description{
-A function that returns raw the info about a list of domain
+A function that returns raw info about a list of domain
 using direct calls to Whois servers
 }
 \examples{

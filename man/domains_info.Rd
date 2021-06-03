@@ -29,4 +29,7 @@ A function that returns Whois data about a given list of domain names
    excludes="domain2.com",
    history=TRUE)
 
+ info2 <- domains_info(
+   domains = "domain1.com, domain2.com, domain3.com",
+   excludes="domain2.com")
 }
