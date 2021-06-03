@@ -4,9 +4,14 @@
 #'
 #' @param domains A comma separated string of domain names
 #' @param excludes A comma separated string of domain names to exclude from search
-#' @param history If true uses the payed Whois API, if false uses the raw data
+#' @param history If set to true returns the history data using the Whois API,
+#'                otherwise it returns the raw data
 #'
 #' @return A data.frame with info about the given domains
+#'
+#' @details to start using the library you need to set the Whois API key.
+#'   Open the environment variable file with file.edit("~/.Renviron"),
+#'   write WHOIS_API_KEY = <YOUR_API_KEY>, save the file and restart your current R session to start using the Whois API
 #'
 #' @examples
 #'  info <- domains_info(
