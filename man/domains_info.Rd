@@ -26,7 +26,8 @@ A function that returns Whois data about a given list of domain names
 }
 \details{
 to start using the library you need to set the Whois API key.
-  Open the environment variable file with file.edit("~/.Renviron"), write WHOIS_API_KEY = <YOUR_API_KEY>, save the file and restart your current R session to start using the Whois API
+  Open the environment variable file with file.edit("~/.Renviron"),
+  write WHOIS_API_KEY = <YOUR_API_KEY>, save the file and restart your current R session to start using the Whois API
 }
 \examples{
  info <- domains_info(

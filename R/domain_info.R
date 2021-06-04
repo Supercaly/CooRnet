@@ -48,9 +48,10 @@ domains_info <- function(domains, excludes="google.com, facebook.com, youtube.co
   if (!history) {
     domain_df <- get_bulk_raw_domain_info(domains)
   } else {
-    domain_df <- names_to_df(domains, FUN = function(name) {
-      get_single_domain_info(name)
-    })
+    domain_df <- get_empty_result_data()
+    for (name in domains) {
+      domain_df <- rbind(domain_df, get_single_domain_info(name))
+    }
   }
 
   return(domain_df)
@@ -149,7 +150,8 @@ get_bulk_raw_domain_info <- function(domain_names) {
   cat(paste0("Getting info about domains ", paste(domain_names, collapse = ", "), "...\n"))
 
   # Get info about each domain name
-  result <- names_to_df(domain_names, FUN = function(host) {
+  result <- get_empty_result_data()
+  for (host in domain_names) {
     raw_data <- NA
     # Get recursively the info about the domain
     refer = "whois.iana.org"
@@ -168,7 +170,7 @@ get_bulk_raw_domain_info <- function(domain_names) {
       raw_data <- paste(raw_data, collapse = "\n")
     }
 
-    data.frame(
+    result <- rbind(result, data.frame(
       domain_name=NA,
       type=NA,
       created_date=NA,
@@ -208,8 +210,8 @@ get_bulk_raw_domain_info <- function(domain_names) {
         email=NA,
         telephone=NA
       ),
-      raw_data=raw_data)
-  })
+      raw_data=raw_data))
+  }
   return(result)
 }
 
@@ -395,29 +397,4 @@ get_na_result_data <- function() {
     ),
     raw_data=NA
   ))
-}
-
-#' names_to_df
-#'
-#' A function that takes a vector of domain names and apply
-#' a given FUN to each of them returning a data.frame
-#'
-#' @param x A vector of domain names
-#' @param FUN A function applied to each domain name
-#'            Note: the function must return a data.frame
-#'
-#' @return A data.frame
-#'
-names_to_df <- function(x, FUN) {
-  # TODO: Make this code faster
-  #if (length(x) == 0 || is.na(x)) {
-  #  return(get_empty_result_data())
-  #}
-  #res <- as.data.frame(t(sapply(x, FUN = FUN)))
-  #row.names(res) <- 1:nrow(res)
-  res <- get_empty_result_data()
-  for (name in x) {
-    res <- rbind(res, FUN(name))
-  }
-  return(res)
 }
