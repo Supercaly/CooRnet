@@ -25,7 +25,7 @@ get_domains_from_summary <- function(summary, threshold=0.8, limit=5) {
     domains_to_search <- head(strsplit(
       coord_domains$top.parent_domain[i], "\\s*,\\s*")[[1]], limit)
     domains_to_search <- paste(domains_to_search, collapse = ", ")
-    domains_info_res <- domains_info(domains_to_search)
+    domains_info_res <- get_domains_info(domains_to_search)
     # Add to result a component column
     result <- rbind(result, dplyr::mutate(
       domains_info_res,
@@ -35,7 +35,7 @@ get_domains_from_summary <- function(summary, threshold=0.8, limit=5) {
   return(result)
 }
 
-#' domains_info
+#' get_domains_info
 #'
 #' A function that returns Whois data about a given list of domain names
 #'
@@ -59,9 +59,8 @@ get_domains_from_summary <- function(summary, threshold=0.8, limit=5) {
 #'  info2 <- domains_info(
 #'    domains = "domain1.com, domain2.com, domain3.com",
 #'    excludes="domain2.com")
-#' @export
 #'
-domains_info <- function(domains, excludes="google.com, facebook.com, youtube.com", history=FALSE) {
+get_domains_info <- function(domains, excludes="google.com, facebook.com, youtube.com", history=FALSE) {
   # Check input parameters
   if (missing(domains)) {
     stop("The function requires the parameter 'domains'!")
