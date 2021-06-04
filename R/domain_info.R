@@ -95,6 +95,7 @@ get_domains_info <- function(domains, excludes="google.com, facebook.com, youtub
     domain_df <- get_empty_result_data()
     for (name in domains) {
       domain_df <- rbind(domain_df, get_single_domain_info(name))
+      Sys.sleep(0.025)
     }
   }
 
@@ -313,8 +314,7 @@ get_raw_domain_info <- function(hostname, server) {
 #'
 get_domain_info_from_api <- function(hostname) {
   res <- httr::POST(
-    "http://localhost:5000/api/v1",
-    #"https://whois-history.whoisxmlapi.com/api/v1",
+    "https://whois-history.whoisxmlapi.com/api/v1",
     body = list(
       apiKey=Sys.getenv("WHOIS_API_KEY"),
       domainName=hostname,
