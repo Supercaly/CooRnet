@@ -1,3 +1,40 @@
+#' get_domains_from_summary
+#'
+#' A function that returns domains info from a summary data.frame
+#'
+#' @param summary A data.frame produced by get_component_summary or get_cluster_summary
+#' @param threshold A value between 0 and 1 used to filter the summary by
+#'                  their gini.parent_domain
+#' @param limit Limit the number of domains searched for each component
+#'
+#' @return A data.frame with info about the given domains and associated
+#'         component from summary
+#'
+get_domains_from_summary <- function(summary, threshold=0.8, limit=5) {
+  # Filter all summary with gini > threshold
+  coord_domains <- summary %>%
+    dplyr::filter(gini.parent_domain > threshold) %>%
+    dplyr::select(c(component, top.parent_domain))
+
+  # Get info about the domains in each component
+  result <- get_empty_result_data()
+  for (i in 1:nrow(coord_domains)) {
+    cat(paste0(i,"/",nrow(coord_domains),"\n"))
+
+    # Limit the search to only first limit domains
+    domains_to_search <- head(strsplit(
+      coord_domains$top.parent_domain[i], "\\s*,\\s*")[[1]], limit)
+    domains_to_search <- paste(domains_to_search, collapse = ", ")
+    domains_info_res <- domains_info(domains_to_search)
+    # Add to result a component column
+    result <- rbind(result, dplyr::mutate(
+      domains_info_res,
+      component=coord_domains$component[i]))
+  }
+
+  return(result)
+}
+
 #' domains_info
 #'
 #' A function that returns Whois data about a given list of domain names
