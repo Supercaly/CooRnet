@@ -226,25 +226,31 @@ get_bulk_raw_domain_info <- function(domain_names) {
 get_raw_domain_info <- function(hostname, server) {
   # Get data from server
   conn <- make.socket(server, 43)
-  write.socket(conn, hostname)
-  write.socket(conn, "\r\n")
 
-  data <- ""
-  curr_read <- "x"
+  return(tryCatch({
+    # Write the hostname to the socket
+    write.socket(conn, hostname)
+    write.socket(conn, "\r\n")
 
-  while(curr_read != "") {
-    curr_read <- read.socket(conn)
-    data <- paste0(data, curr_read)
-  }
+    data <- ""
+    curr_read <- "x"
 
-  close.socket(conn)
+    # Read the server's response
+    while(curr_read != "") {
+      curr_read <- read.socket(conn)
+      data <- paste0(data, curr_read)
+    }
 
-  # If there was an error return NA instead of the default error message
-  if (length(grep("This query returned 0 objects", data, value = TRUE)) != 0) {
+    # If there was an error return NA instead of the default error message
+    if (length(grep("This query returned 0 objects", data, value = TRUE)) != 0) {
+      data <- NA
+    }
+
+    return(data)
+  }, error = function(err) {
+    cat(paste0("Error reading info for domain '",hostname, "' on server '", server,"'\n"))
     return(NA)
-  }
-
-  return(data)
+  }, finally = close.socket(conn)))
 }
 
 #' get_domain_info_from_api
@@ -262,10 +268,11 @@ get_raw_domain_info <- function(hostname, server) {
 get_domain_info_from_api <- function(hostname) {
   res <- httr::POST(
     "http://localhost:5000/api/v1",
+    #"https://whois-history.whoisxmlapi.com/api/v1",
     body = list(
       apiKey=Sys.getenv("WHOIS_API_KEY"),
       domainName=hostname,
-      mode="preview"
+      mode="purchase"
     ),
     encode = "json")
 
