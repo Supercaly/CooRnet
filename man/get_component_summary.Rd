@@ -4,18 +4,36 @@
 \alias{get_component_summary}
 \title{get_component_summary}
 \usage{
-get_component_summary(output)
+get_component_summary(
+  output,
+  component_threshold = 0.8,
+  domains_limit = 5,
+  exclude_domains = "google.com, facebook.com, youtube.com",
+  domains_history = FALSE
+)
 }
 \arguments{
 \item{output}{the output list resulting from the function get_coord_shares}
+
+\item{component_threshold}{A value between 0 and 1 used to filter the summary by
+their gini.parent_domain}
+
+\item{domains_limit}{Limit the number of domains searched for each component}
+
+\item{exclude_domains}{A comma separated string of domain names to exclude from search}
+
+\item{domains_history}{If set to true returns the history data using the Whois API,
+otherwise it returns the raw data}
 }
 \value{
-A data frame containing summary data by each coordinated component:
-the average subscribers number of entities in a component,
-the proportion of coordinated shares over the total shares (coorshare_ratio), the average coordinated score (avg_cooRscore),
-a measure of dispersion (gini) in the distribution of domains coordinatedly shared by the component (0-1). Higher values correspond to an higher concentration (less different domains linked),
-the top 5 coordinatedly shared domains (ranked by n. of shares),
-the total number coordinatedly shared of domains
+A list of two data.frame.
+        The first is a data frame containing summary data by each coordinated component:
+        the average subscribers number of entities in a component,
+        the proportion of coordinated shares over the total shares (coorshare_ratio), the average coordinated score (avg_cooRscore),
+        a measure of dispersion (gini) in the distribution of domains coordinatedly shared by the component (0-1). Higher values correspond to an higher concentration (less different domains linked),
+        the top 5 coordinatedly shared domains (ranked by n. of shares),
+        the total number coordinatedly shared of domains.
+        The second is a data.frame containing all the domains info with their related components
 }
 \description{
 A function to get summary data by coordinated component
@@ -28,6 +46,10 @@ The cooRscore.avg is a measures of component coordination. Higher values implies
 Its value is calculated by dividing, for each entity in a coordinated network, its \code{\link[igraph]{strength}} by its \code{\link[igraph]{degree}}, and then calculating the average by component of these values.
 
 The cooRshare_ratio.avg is an addional measure of component coordination ranging from 0 (no shares coordinated) to 1 (all shares coordinated).
+
+To start using the library you need to set the Whois API key.
+  Open the environment variable file with file.edit("~/.Renviron"),
+  write WHOIS_API_KEY = <YOUR_API_KEY>, save the file and restart your current R session to start using the Whois API
 }
 \examples{
   # get the top ten posts containing URLs shared by each network component and by engagement

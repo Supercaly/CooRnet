@@ -3,14 +3,21 @@
 #' A function to get summary data by coordinated component
 #'
 #' @param output the output list resulting from the function get_coord_shares
+#' @param component_threshold A value between 0 and 1 used to filter the summary by
+#'                  their gini.parent_domain
+#' @param domains_limit Limit the number of domains searched for each component
+#' @param exclude_domains A comma separated string of domain names to exclude from search
+#' @param domains_history If set to true returns the history data using the Whois API,
+#'                otherwise it returns the raw data
 #'
-#' @return A data frame containing summary data by each coordinated component:
-#' the average subscribers number of entities in a component,
-#' the proportion of coordinated shares over the total shares (coorshare_ratio), the average coordinated score (avg_cooRscore),
-#' a measure of dispersion (gini) in the distribution of domains coordinatedly shared by the component (0-1). Higher values correspond to an higher concentration (less different domains linked),
-#' the top 5 coordinatedly shared domains (ranked by n. of shares),
-#' the total number coordinatedly shared of domains
-#'
+#' @return A list of two data.frame.
+#'         The first is a data frame containing summary data by each coordinated component:
+#'         the average subscribers number of entities in a component,
+#'         the proportion of coordinated shares over the total shares (coorshare_ratio), the average coordinated score (avg_cooRscore),
+#'         a measure of dispersion (gini) in the distribution of domains coordinatedly shared by the component (0-1). Higher values correspond to an higher concentration (less different domains linked),
+#'         the top 5 coordinatedly shared domains (ranked by n. of shares),
+#'         the total number coordinatedly shared of domains.
+#'         The second is a data.frame containing all the domains info with their related components
 #'
 #' @details The gini values are computed by using the Gini coefficient on the proportions of unique domains each component shared. The Gini coefficient is a measure of the degree of concentration (inequality) of a variable in a distribution.
 #' It ranges between 0 and 1: the more nearly equal the distribution, the lower its Gini index. When a component shared just one domain, the value of the variable is set to 1. It is calculated separately for full_domains (e.g. www.foxnews.com, video.foxnews.com) and parent domains (foxnews.com)
@@ -19,6 +26,10 @@
 #' Its value is calculated by dividing, for each entity in a coordinated network, its \code{\link[igraph]{strength}} by its \code{\link[igraph]{degree}}, and then calculating the average by component of these values.
 #'
 #' The cooRshare_ratio.avg is an addional measure of component coordination ranging from 0 (no shares coordinated) to 1 (all shares coordinated).
+#'
+#' To start using the library you need to set the Whois API key.
+#'   Open the environment variable file with file.edit("~/.Renviron"),
+#'   write WHOIS_API_KEY = <YOUR_API_KEY>, save the file and restart your current R session to start using the Whois API
 #'
 #' @examples
 #'   # get the top ten posts containing URLs shared by each network component and by engagement
@@ -34,7 +45,7 @@
 #'
 #' @export
 
-get_component_summary <- function(output){
+get_component_summary <- function(output, component_threshold=0.8, domains_limit=5, exclude_domains="google.com, facebook.com, youtube.com", domains_history=FALSE){
 
   ct_shares_marked.df <- output[[1]]
   highly_connected_coordinated_entities <- output[[3]]
@@ -85,5 +96,13 @@ get_component_summary <- function(output){
 
   cat("Component summary done!\n")
 
-  return(summary)
+  # Get domains from summary
+  domains <- get_domains_from_summary(
+    summary = summary,
+    threshold = component_threshold,
+    limit = domains_limit,
+    excludes = exclude_domains,
+    history =  domains_history)
+
+  return(list(summary, domains))
 }

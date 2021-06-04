@@ -6,11 +6,14 @@
 #' @param threshold A value between 0 and 1 used to filter the summary by
 #'                  their gini.parent_domain
 #' @param limit Limit the number of domains searched for each component
+#' @param excludes A comma separated string of domain names to exclude from search
+#' @param history If set to true returns the history data using the Whois API,
+#'                otherwise it returns the raw data
 #'
 #' @return A data.frame with info about the given domains and associated
 #'         component from summary
 #'
-get_domains_from_summary <- function(summary, threshold=0.8, limit=5) {
+get_domains_from_summary <- function(summary, threshold=0.8, limit=5, excludes="google.com, facebook.com, youtube.com", history=FALSE) {
   # Filter all summary with gini > threshold
   coord_domains <- summary %>%
     dplyr::filter(gini.parent_domain > threshold) %>%
@@ -25,7 +28,12 @@ get_domains_from_summary <- function(summary, threshold=0.8, limit=5) {
     domains_to_search <- head(strsplit(
       coord_domains$top.parent_domain[i], "\\s*,\\s*")[[1]], limit)
     domains_to_search <- paste(domains_to_search, collapse = ", ")
-    domains_info_res <- get_domains_info(domains_to_search)
+
+    domains_info_res <- get_domains_info(
+      domains = domains_to_search,
+      excludes = excludes,
+      history = history)
+
     # Add to result a component column
     result <- rbind(result, dplyr::mutate(
       domains_info_res,

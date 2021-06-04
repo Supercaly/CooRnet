@@ -4,7 +4,13 @@
 \alias{get_domains_from_summary}
 \title{get_domains_from_summary}
 \usage{
-get_domains_from_summary(summary, threshold = 0.8, limit = 5)
+get_domains_from_summary(
+  summary,
+  threshold = 0.8,
+  limit = 5,
+  excludes = "google.com, facebook.com, youtube.com",
+  history = FALSE
+)
 }
 \arguments{
 \item{summary}{A data.frame produced by get_component_summary or get_cluster_summary}
@@ -13,6 +19,11 @@ get_domains_from_summary(summary, threshold = 0.8, limit = 5)
 their gini.parent_domain}
 
 \item{limit}{Limit the number of domains searched for each component}
+
+\item{excludes}{A comma separated string of domain names to exclude from search}
+
+\item{history}{If set to true returns the history data using the Whois API,
+otherwise it returns the raw data}
 }
 \value{
 A data.frame with info about the given domains and associated
